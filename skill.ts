@@ -24,12 +24,8 @@ export const Skill = skill({
 			image: "gcr.io/atomist-container-skills/skill-registration-skill:c414c26dca04070bb2328b14ea427de3560dc6be",
 			resources: {
 				limit: {
-					cpu: 1,
-					memory: 5000,
-				},
-				request: {
-					cpu: 1,
-					memory: 5000,
+					cpu: 4,
+					memory: 8000,
 				},
 			},
 		},
