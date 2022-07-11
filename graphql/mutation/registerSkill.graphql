@@ -1,0 +1,7 @@
+mutation RegisterSkill($skill: AtomistSkillInput!) {
+  registerSkill(skill: $skill) {
+    name
+    namespace
+    version
+  }
+}

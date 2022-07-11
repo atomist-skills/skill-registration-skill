@@ -1,0 +1,60 @@
+[:find
+ (pull
+   ?image
+   [:schema/entity-type
+    :docker.image/digest
+    {:docker.image/labels [:docker.image.label/name :docker.image.label/value]}
+    {:docker.image/repository [:docker.repository/host
+                               (:docker.repository/repository :as :name)]}])
+ (pull
+   ?commit
+   [:schema/entity-type
+    {(:git.ref/_commit :as :git.ref/refs) [:git.ref/name
+                                           :git.ref/type]}
+    {:git.commit/repo [:git.repo/name
+                       :git.repo/source-id
+                       :git.repo/default-branch
+                       {:git.repo/org [:github.org/installation-token
+                                       :git.org/name
+                                       :git.provider/url]}]}
+    :git.commit/sha])
+ (pull
+   ?docker-registry
+   [:db/id
+    :schema/entity-type
+    :docker.registry/type
+    :docker.registry/secret
+    :docker.registry/username
+    :docker.registry/server-url
+    :docker.registry.gcr/service-account
+    :docker.registry.gar/service-account
+    :docker.registry.ecr/arn
+    :docker.registry.ecr/external-id
+    :docker.registry.ecr/region])
+ :in $ $before-db % ?ctx
+ :where
+ (attributes-tx ?ctx ?image :docker.image/commit ?commit)
+
+ ;; following two labels are required
+ [?image :docker.image/labels ?name-label]
+ [?name-label :docker.image.label/name "com.docker.skill.name"]
+
+ [?image :docker.image/labels ?namespace-label]
+ [?namespace-label :docker.image.label/name "com.docker.skill.namespace"]
+
+ ;; only commits on the repo default branch get registered
+ [?ref :git.ref/commit ?commit]
+ [?ref :git.ref/type :git.ref.type/branch]
+
+ [?commit :git.commit/repo ?repo]
+ [?repo :git.repo/default-branch ?default-branch]
+
+ [?ref :git.ref/name ?default-branch]
+
+ (or-join [?docker-registry ?ctx]
+   (skill-capability-configuration ?ctx
+     "atomist"
+     "DockerRegistry"
+     "analysis"
+     ?docker-registry)
+   [(ground "empty") ?docker-registry])]
