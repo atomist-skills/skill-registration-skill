@@ -65,11 +65,11 @@ export const handler: MappingEventHandler<
 	},
 	handle: policy.checkHandler({
 		id: ctx => repository.fromRepo(ctx.data.commit.repo),
-		details: ctx => ({
+		details: () => ({
 			check: {
 				name: "register-skill",
 				title: "Skill Registration",
-				body: "",
+				body: `Registering skill`,
 				includeAnnotations: false,
 				includeBadge: false,
 				longRunning: false,
@@ -239,7 +239,7 @@ async function downloadImage(
 		],
 		["asc"],
 	);
-	return docker.doAuthed<string>(ctx, sortedRegistries, async registry => {
+	return docker.doAuthed<string>(ctx, sortedRegistries, async () => {
 		log.info("Downloading image");
 		const tmpDir = await tmpFs.createDir(ctx);
 		const args = [
