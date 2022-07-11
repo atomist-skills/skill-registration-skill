@@ -231,7 +231,7 @@ async function defaults(
 ): Promise<any> {
 	const description = `Atomist Skill registered from ${commit.repo.org.name}/${commit.repo.name}`;
 	const longDescription = description;
-	const readme = description;
+	const readme = Buffer.from(description).toString("base64");
 
 	let iconUrl = `https://github.com/${commit.repo.org.name}.png`;
 	const icons = await project.globFiles(cwd, "icon.svg");
