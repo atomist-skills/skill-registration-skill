@@ -6,6 +6,12 @@ RUN apk add --no-cache \
  skopeo=1.8.0-r1 \
  && skopeo --version
 
+# container-diff
+RUN curl -sLO https://storage.googleapis.com/container-diff/latest/container-diff-linux-amd64 \
+ && chmod +x container-diff-linux-amd64 \
+ && mv container-diff-linux-amd64 /usr/bin/container-diff \
+ && container-diff version
+
 WORKDIR "/skill"
 
 # Set up build

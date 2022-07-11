@@ -36,7 +36,11 @@ import * as path from "path";
 import { Configuration } from "../configuration";
 import { nextTag } from "../tags";
 import { ExtendedDockerRegistry, RegisterSkill } from "../types";
-import { AtomistYaml, getYamlFile } from "../util";
+import {
+	AtomistYaml,
+	CreateRepositoryIdFromCommit,
+	getYamlFile,
+} from "../util";
 
 export const handler: MappingEventHandler<
 	RegisterSkill,
@@ -65,7 +69,7 @@ export const handler: MappingEventHandler<
 		};
 	},
 	handle: policy.checkHandler({
-		id: ctx => repository.fromRepo(ctx.data.commit.repo),
+		id: CreateRepositoryIdFromCommit,
 		details: () => ({
 			check: {
 				name: "register-skill",
@@ -84,7 +88,7 @@ export const handler: MappingEventHandler<
 				imageDir,
 			);
 
-			let skill: any = defaults(imageDir, ctx.data.commit);
+			let skill: any = await defaults(imageDir, ctx.data.commit);
 			if (await fs.pathExists(p.path("skill.yaml"))) {
 				const skillYaml = (
 					await getYamlFile<AtomistYaml>(p, "skill.yaml")
@@ -166,14 +170,14 @@ export const handler: MappingEventHandler<
 			) {
 				const newImageName = await copyImage(
 					ctx,
-					skill,
+					ctx.data,
 					skill.namespace,
 					skill.name,
-					skill.verison,
+					skill.version,
 				);
-				artifact.name = newImageName;
+				artifact.image = newImageName;
 			} else {
-				artifact.name = fullImageName(image);
+				artifact.image = fullImageName(image);
 			}
 
 			if (!(skill.artifacts?.docker?.length > 0)) {
@@ -281,16 +285,22 @@ async function downloadImage(
 	return docker.doAuthed<string>(ctx, sortedRegistries, async () => {
 		log.info("Downloading image");
 		const tmpDir = await tmpFs.createDir(ctx);
-		const args = [
-			"copy",
-			`docker://${fullImageName(skill.image)}`,
-			`dir://${tmpDir}`,
-		];
-
-		const result = await childProcess.spawnPromise("skopeo", args);
+		const imageNameWithDigest = fullImageName(ctx.data.image);
+		const args = ["analyze", "--type=file", imageNameWithDigest];
+		const env = { ...process.env, CONTAINER_DIFF_CACHEDIR: tmpDir };
+		const result = await childProcess.spawnPromise("container-diff", args, {
+			env,
+		});
 		if (result.status !== 0) {
-			throw new Error("Failed to copy image");
+			throw new Error("Failed to extract layers");
 		}
+		return path.join(
+			tmpDir,
+			".container-diff",
+			"cache",
+			imageNameWithDigest.replace(/\//g, "").replace(/:/g, "_"),
+		);
+
 		return tmpDir;
 	});
 }
@@ -334,6 +344,7 @@ async function copyImage(
 
 		const result = await childProcess.spawnPromise("skopeo", args);
 		if (result.status !== 0) {
+			log.error(result.stderr);
 			throw new Error("Failed to copy image");
 		}
 		return newImageName;
