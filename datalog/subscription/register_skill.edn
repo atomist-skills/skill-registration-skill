@@ -39,7 +39,7 @@
  [?image :docker.image/tags ?tag]
  (not (string-match ?tag "^.*\\.skill$" _))
 
- ;; following two labels are required
+ ;; following label are required
  [?image :docker.image/labels ?label]
  [?label :docker.image.label/name "com.docker.skill.api.version"]
 
