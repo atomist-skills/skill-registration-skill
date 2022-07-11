@@ -1,10 +1,10 @@
 {
-  "name": "@atomist/skill-package-skill",
-  "description": "Packaging Skill",
+  "name": "@atomist/skill-registration-skill",
+  "description": "Registration Skill",
   "keywords": [
     "BUILD"
   ],
-  "homepage": "https://github.com/atomist-skills/skill-package-skill#readme",
+  "homepage": "https://github.com/atomist-skills/skill-registration-skill#readme",
   "license": "Apache-2.0",
   "author": {
     "name": "Atomist, Inc.",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/atomist-skills/skill-package-skill.git"
+    "url": "https://github.com/atomist-skills/skill-registration-skill.git"
   },
   "scripts": {
     "atm:lint:eslint": "eslint --fix",

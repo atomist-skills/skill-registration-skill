@@ -18,6 +18,7 @@ import {
 	childProcess,
 	docker,
 	EventContext,
+	github,
 	handle,
 	log,
 	MappingEventHandler,
@@ -153,10 +154,27 @@ export const handler: MappingEventHandler<
 			}
 			skill.schemata = schemata;
 
-			// TODO copy image to our gcr.io registry
 			const artifact = skill.artifacts?.docker?.[0] || ({} as any);
 			artifact.name = artifact.name || "skill";
-			artifact.name = fullImageName(image);
+			if (
+				!(
+					ctx.data.image.repository.host === "gcr.io" &&
+					ctx.data.image.repository.name.startsWith(
+						"atomist-container-skills/",
+					)
+				)
+			) {
+				const newImageName = await copyImage(
+					ctx,
+					skill,
+					skill.namespace,
+					skill.name,
+					skill.verison,
+				);
+				artifact.name = newImageName;
+			} else {
+				artifact.name = fullImageName(image);
+			}
 
 			if (!(skill.artifacts?.docker?.length > 0)) {
 				skill.artifacts = {
@@ -169,6 +187,20 @@ export const handler: MappingEventHandler<
 			// eslint-disable-next-line deprecation/deprecation
 			await ctx.graphql.mutate("registerSkill.graphql", {
 				skill,
+			});
+
+			await github.api(p.id).git.createTag({
+				owner: p.id.owner,
+				repo: p.id.repo,
+				tag: skill.version,
+				object: ctx.data.commit.sha,
+				type: "commit",
+				message: `v${skill.version}`,
+				tagger: {
+					name: "Atomist Bot",
+					email: "bot@atomist.com",
+					date: new Date().toISOString(),
+				},
 			});
 
 			return {
@@ -253,6 +285,51 @@ async function downloadImage(
 			throw new Error("Failed to copy image");
 		}
 		return tmpDir;
+	});
+}
+
+async function copyImage(
+	ctx: EventContext,
+	skill: RegisterSkill,
+	namespace: string,
+	name: string,
+	version: string,
+): Promise<string> {
+	const host = skill.image.repository.host;
+	const sortedRegistries = _.orderBy(
+		skill.registry,
+		[
+			r => {
+				switch (r?.type) {
+					case subscription.datalog.DockerRegistryType.Ecr:
+						return host.includes(".ecr.") ? 0 : 1;
+					case subscription.datalog.DockerRegistryType.Gcr:
+						return host.includes("gcr.io") ? 0 : 1;
+					case subscription.datalog.DockerRegistryType.Ghcr:
+						return host.includes("ghcr.io") ? 0 : 1;
+					case subscription.datalog.DockerRegistryType.DockerHub:
+						return host === "hub.docker.com" ? 0 : 1;
+					default:
+						return 1;
+				}
+			},
+		],
+		["asc"],
+	);
+	const newImageName = `gcr.io/atomist-container-skills/${namespace}-${name}:${version}`;
+	return docker.doAuthed<string>(ctx, sortedRegistries, async () => {
+		log.info("Copying image");
+		const args = [
+			"copy",
+			`docker://${fullImageName(skill.image)}`,
+			`docker://${newImageName}`,
+		];
+
+		const result = await childProcess.spawnPromise("skopeo", args);
+		if (result.status !== 0) {
+			throw new Error("Failed to copy image");
+		}
+		return newImageName;
 	});
 }
 
