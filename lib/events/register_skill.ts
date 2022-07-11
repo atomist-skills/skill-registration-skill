@@ -35,6 +35,7 @@ import * as path from "path";
 
 import { Configuration } from "../configuration";
 import { nextTag } from "../tags";
+import { transactStream } from "../transact_stream";
 import { ExtendedDockerRegistry, RegisterSkill } from "../types";
 import {
 	AtomistYaml,
@@ -213,6 +214,14 @@ export const handler: MappingEventHandler<
 				sha: ctx.data.commit.sha,
 				ref: `refs/tags/${skill.version}`,
 			});
+
+			await transactStream(
+				ctx,
+				ctx.data,
+				"unstable",
+				skill.namespace,
+				skill.name,
+			);
 
 			return {
 				status: status.success(
