@@ -35,6 +35,10 @@
  :where
  (attributes-tx ?ctx ?image :docker.image/commit ?commit)
 
+ ;; prevent endless self-registration
+ [?image :docker.image/tags ?tag]
+ (not (string-match ?tag "^.*\\.skill$" _))
+
  ;; following two labels are required
  [?image :docker.image/labels ?name-label]
  [?name-label :docker.image.label/name "com.docker.skill.name"]
