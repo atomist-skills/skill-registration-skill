@@ -83,19 +83,23 @@ export const handler: MappingEventHandler<
 		}),
 		execute: async ctx => {
 			const image = ctx.data.image;
+
 			const dir = await downloadImage(ctx, ctx.data);
-			const p = await ctx.project.load(
+			let skill: any = await defaults(dir, ctx.data.commit);
+
+			let p = await ctx.project.load(
 				repository.fromRepo(ctx.data.commit.repo),
 				dir,
 			);
-
-			let skill: any = await defaults(dir, ctx.data.commit);
-			if (await fs.pathExists(p.path("skill.yaml"))) {
-				const skillYaml = (
-					await getYamlFile<AtomistYaml>(p, "skill.yaml")
-				).doc.skill;
-				skill = _.merge(skill, skillYaml, {});
+			if (!(await fs.pathExists(p.path("skill.yaml")))) {
+				const id = repository.fromRepo(ctx.data.commit.repo);
+				id.sha = ctx.data.commit.sha;
+				p = await ctx.project.clone(id, { detachHead: true });
 			}
+			const skillYaml = (await getYamlFile<AtomistYaml>(p, "skill.yaml"))
+				.doc.skill;
+			skill = _.merge(skill, skillYaml, {});
+
 			skill.version =
 				image.labels?.find(l => l.name === "com.docker.skill.version")
 					?.value ||
