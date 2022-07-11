@@ -41,7 +41,7 @@
 
  ;; following two labels are required
  [?image :docker.image/labels ?label]
- [?label :docker.image.label/name "com.docker.skill.path"]
+ [?label :docker.image.label/name "com.docker.skill.api.version"]
 
  ;; only commits on the repo default branch get registered
  [?ref :git.ref/commit ?commit]

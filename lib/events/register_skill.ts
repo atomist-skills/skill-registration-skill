@@ -89,12 +89,7 @@ export const handler: MappingEventHandler<
 				dir,
 			);
 
-			const skillPath =
-				image.labels?.find(l => l.name === "com.docker.skill.path")
-					?.value || "/";
-			const skillDir = p.path(skillPath);
-
-			let skill: any = await defaults(skillDir, ctx.data.commit);
+			let skill: any = await defaults(dir, ctx.data.commit);
 			if (await fs.pathExists(p.path("skill.yaml"))) {
 				const skillYaml = (
 					await getYamlFile<AtomistYaml>(p, "skill.yaml")
@@ -113,13 +108,13 @@ export const handler: MappingEventHandler<
 					name: string;
 					query: string;
 					limit?: number;
-				}>(skillDir, "datalog/subscription/*.edn", async file => {
-					const filePath = path.join(skillDir, file);
+				}>(p, "datalog/subscription/*.edn", async file => {
+					const filePath = path.join(dir, file);
 					const fileName = path.basename(filePath);
 					const extName = path.extname(fileName);
 					return {
 						query: (
-							await fs.readFile(path.join(skillDir, file))
+							await fs.readFile(path.join(dir, file))
 						).toString(),
 						name: fileName.replace(extName, ""),
 					};
@@ -142,12 +137,12 @@ export const handler: MappingEventHandler<
 					...(await project.withGlobMatches<{
 						name: string;
 						schema: string;
-					}>(skillDir, "datalog/schema/*.edn", async file => {
-						const filePath = path.join(skillDir, file);
+					}>(p, "datalog/schema/*.edn", async file => {
+						const filePath = path.join(dir, file);
 						const fileName = path.basename(filePath);
 						const extName = path.extname(fileName);
 						const schema = (
-							await fs.readFile(path.join(skillDir, file))
+							await fs.readFile(path.join(dir, file))
 						).toString();
 						return {
 							schema,
