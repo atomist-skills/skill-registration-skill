@@ -40,11 +40,8 @@
  (not (string-match ?tag "^.*\\.skill$" _))
 
  ;; following two labels are required
- [?image :docker.image/labels ?name-label]
- [?name-label :docker.image.label/name "com.docker.skill.name"]
-
- [?image :docker.image/labels ?namespace-label]
- [?namespace-label :docker.image.label/name "com.docker.skill.namespace"]
+ [?image :docker.image/labels ?label]
+ [?label :docker.image.label/name "com.docker.skill.path"]
 
  ;; only commits on the repo default branch get registered
  [?ref :git.ref/commit ?commit]

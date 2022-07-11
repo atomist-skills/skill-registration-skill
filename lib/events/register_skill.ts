@@ -83,25 +83,24 @@ export const handler: MappingEventHandler<
 		}),
 		execute: async ctx => {
 			const image = ctx.data.image;
-			const imageDir = await downloadImage(ctx, ctx.data);
+			const dir = await downloadImage(ctx, ctx.data);
 			const p = await ctx.project.load(
 				repository.fromRepo(ctx.data.commit.repo),
-				imageDir,
+				dir,
 			);
 
-			let skill: any = await defaults(imageDir, ctx.data.commit);
+			const skillPath =
+				image.labels?.find(l => l.name === "com.docker.skill.path")
+					?.value || "/";
+			const skillDir = p.path(skillPath);
+
+			let skill: any = await defaults(skillDir, ctx.data.commit);
 			if (await fs.pathExists(p.path("skill.yaml"))) {
 				const skillYaml = (
 					await getYamlFile<AtomistYaml>(p, "skill.yaml")
 				).doc.skill;
 				skill = _.merge(skill, skillYaml, {});
 			}
-			skill.namespace =
-				image.labels?.find(l => l.name === "com.docker.skill.namespace")
-					?.value || skill.namespace;
-			skill.name =
-				image.labels?.find(l => l.name === "com.docker.skill.name")
-					?.value || skill.name;
 			skill.version =
 				image.labels?.find(l => l.name === "com.docker.skill.version")
 					?.value || (await nextTag(p.id));
@@ -114,13 +113,13 @@ export const handler: MappingEventHandler<
 					name: string;
 					query: string;
 					limit?: number;
-				}>(imageDir, "datalog/subscription/*.edn", async file => {
-					const filePath = path.join(imageDir, file);
+				}>(skillDir, "datalog/subscription/*.edn", async file => {
+					const filePath = path.join(skillDir, file);
 					const fileName = path.basename(filePath);
 					const extName = path.extname(fileName);
 					return {
 						query: (
-							await fs.readFile(path.join(imageDir, file))
+							await fs.readFile(path.join(skillDir, file))
 						).toString(),
 						name: fileName.replace(extName, ""),
 					};
@@ -143,12 +142,12 @@ export const handler: MappingEventHandler<
 					...(await project.withGlobMatches<{
 						name: string;
 						schema: string;
-					}>(imageDir, "datalog/schema/*.edn", async file => {
-						const filePath = path.join(imageDir, file);
+					}>(skillDir, "datalog/schema/*.edn", async file => {
+						const filePath = path.join(skillDir, file);
 						const fileName = path.basename(filePath);
 						const extName = path.extname(fileName);
 						const schema = (
-							await fs.readFile(path.join(imageDir, file))
+							await fs.readFile(path.join(skillDir, file))
 						).toString();
 						return {
 							schema,
