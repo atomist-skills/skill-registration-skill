@@ -1,8 +1,8 @@
-# `@atomist/skill-package-skill`
+# `@atomist/skill-registration-skill`
 
-`@atomist/skill-package-skill` is licensed under Apache License 2.0 - [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0).
+`@atomist/skill-registration-skill` is licensed under Apache License 2.0 - [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
-This page details all runtime dependencies of `@atomist/skill-package-skill`.
+This page details all runtime dependencies of `@atomist/skill-registration-skill`.
 
 ## Licenses
 
