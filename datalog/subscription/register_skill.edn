@@ -55,6 +55,9 @@
 
  [?ref :git.ref/name ?default-branch]
 
+ ;; check repo filter
+ (skill-repo-selected? ?ctx ?repo)
+
  (or-join [?docker-registry ?ctx]
    (skill-capability-configuration ?ctx
      "atomist"
