@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CapabilityScope, Category, parameter, skill } from "@atomist/skill";
+import { Category, parameter, skill } from "@atomist/skill";
 
 export const Skill = skill({
 	categories: [Category.DevOps],
@@ -33,18 +33,5 @@ export const Skill = skill({
 
 	parameters: {
 		repos: parameter.repoFilter(),
-	},
-
-	capabilities: {
-		requires: [
-			{
-				namespace: "atomist",
-				name: "DockerRegistry",
-				minRequired: 0,
-				usage: "analysis",
-				displayName: "Docker registry",
-				scopes: [CapabilityScope.Configuration],
-			},
-		],
 	},
 });
