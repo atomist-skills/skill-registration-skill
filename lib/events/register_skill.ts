@@ -98,7 +98,9 @@ export const handler: MappingEventHandler<
 			}
 			skill.version =
 				image.labels?.find(l => l.name === "com.docker.skill.version")
-					?.value || (await nextTag(p.id));
+					?.value ||
+				skill.version ||
+				(await nextTag(p.id));
 			skill.repoId = ctx.data.commit.repo.sourceId;
 			skill.commitSha = ctx.data.commit.sha;
 
