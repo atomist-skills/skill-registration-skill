@@ -115,13 +115,11 @@ export const handler: MappingEventHandler<
 					query: string;
 					limit?: number;
 				}>(p, "datalog/subscription/*.edn", async file => {
-					const filePath = path.join(dir, file);
+					const filePath = p.path(file);
 					const fileName = path.basename(filePath);
 					const extName = path.extname(fileName);
 					return {
-						query: (
-							await fs.readFile(path.join(dir, file))
-						).toString(),
+						query: (await fs.readFile(filePath)).toString(),
 						name: fileName.replace(extName, ""),
 					};
 				})),
@@ -144,12 +142,10 @@ export const handler: MappingEventHandler<
 						name: string;
 						schema: string;
 					}>(p, "datalog/schema/*.edn", async file => {
-						const filePath = path.join(dir, file);
+						const filePath = path.join(p.path(), file);
 						const fileName = path.basename(filePath);
 						const extName = path.extname(fileName);
-						const schema = (
-							await fs.readFile(path.join(dir, file))
-						).toString();
+						const schema = (await fs.readFile(filePath)).toString();
 						return {
 							schema,
 							name: fileName.replace(extName, ""),
