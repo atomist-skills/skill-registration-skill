@@ -189,7 +189,8 @@ export const handler: MappingEventHandler<
 				skill,
 			});
 
-			await github.api(p.id).git.createTag({
+			const api = github.api(p.id);
+			await api.git.createTag({
 				owner: p.id.owner,
 				repo: p.id.repo,
 				tag: skill.version,
@@ -201,6 +202,12 @@ export const handler: MappingEventHandler<
 					email: "bot@atomist.com",
 					date: new Date().toISOString(),
 				},
+			});
+			await api.git.createRef({
+				owner: p.id.owner,
+				repo: p.id.repo,
+				sha: ctx.data.commit.sha,
+				ref: `refs/tags/${skill.version}`,
 			});
 
 			return {
