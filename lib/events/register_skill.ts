@@ -333,7 +333,7 @@ async function copyImage(
 		],
 		["asc"],
 	);
-	const newImageName = `gcr.io/atomist-container-skills/${namespace}-${name}:${version}`;
+	const newImageName = `gcr.io/atomist-container-skills/${namespace}-${name}:${version}.skill`;
 	return docker.doAuthed<string>(ctx, sortedRegistries, async () => {
 		log.info("Copying image");
 		const args = [
