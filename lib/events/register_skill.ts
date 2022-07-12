@@ -85,7 +85,7 @@ export const handler: MappingEventHandler<
 		execute: async ctx => {
 			const image = ctx.data.image;
 
-			const dir = await downloadImage(ctx, ctx.data);
+			const [dir, registry] = await downloadImage(ctx, ctx.data);
 			let skill: any = await defaults(dir, ctx.data.commit);
 
 			let p = await ctx.project.load(
@@ -172,6 +172,7 @@ export const handler: MappingEventHandler<
 					skill.namespace,
 					skill.name,
 					skill.version,
+					registry,
 				);
 				artifact.image = newImageName;
 			} else {
@@ -266,7 +267,7 @@ async function defaults(
 async function downloadImage(
 	ctx: EventContext,
 	skill: RegisterSkill,
-): Promise<string> {
+): Promise<[string, ExtendedDockerRegistry]> {
 	const host = skill.image.repository.host;
 	const sortedRegistries = _.orderBy(
 		skill.registry,
@@ -288,27 +289,38 @@ async function downloadImage(
 		],
 		["asc"],
 	);
-	return docker.doAuthed<string>(ctx, sortedRegistries, async () => {
-		log.info("Downloading image");
-		const tmpDir = await tmpFs.createDir(ctx);
-		const imageNameWithDigest = fullImageName(ctx.data.image);
-		const args = ["analyze", "--type=file", imageNameWithDigest];
-		const env = { ...process.env, CONTAINER_DIFF_CACHEDIR: tmpDir };
-		const result = await childProcess.spawnPromise("container-diff", args, {
-			env,
-		});
-		if (result.status !== 0) {
-			throw new Error("Failed to extract layers");
-		}
-		return path.join(
-			tmpDir,
-			".container-diff",
-			"cache",
-			imageNameWithDigest.replace(/\//g, "").replace(/:/g, "_"),
-		);
-
-		return tmpDir;
-	});
+	return docker.doAuthed<[string, ExtendedDockerRegistry]>(
+		ctx,
+		sortedRegistries,
+		async registry => {
+			log.info("Downloading image");
+			const tmpDir = await tmpFs.createDir(ctx);
+			const imageNameWithDigest = fullImageName(ctx.data.image);
+			const args = ["analyze", "--type=file", imageNameWithDigest];
+			const env = { ...process.env, CONTAINER_DIFF_CACHEDIR: tmpDir };
+			const result = await childProcess.spawnPromise(
+				"container-diff",
+				args,
+				{
+					env,
+					logCommand: false,
+				},
+			);
+			if (result.status !== 0) {
+				throw new Error("Failed to download layers");
+			}
+			log.info(`Successfully downloaded image`);
+			return [
+				path.join(
+					tmpDir,
+					".container-diff",
+					"cache",
+					imageNameWithDigest.replace(/\//g, "").replace(/:/g, "_"),
+				),
+				registry,
+			];
+		},
+	);
 }
 
 async function copyImage(
@@ -317,30 +329,10 @@ async function copyImage(
 	namespace: string,
 	name: string,
 	version: string,
+	registry: ExtendedDockerRegistry,
 ): Promise<string> {
-	const host = skill.image.repository.host;
-	const sortedRegistries = _.orderBy(
-		skill.registry,
-		[
-			r => {
-				switch (r?.type) {
-					case subscription.datalog.DockerRegistryType.Ecr:
-						return host.includes(".ecr.") ? 0 : 1;
-					case subscription.datalog.DockerRegistryType.Gcr:
-						return host.includes("gcr.io") ? 0 : 1;
-					case subscription.datalog.DockerRegistryType.Ghcr:
-						return host.includes("ghcr.io") ? 0 : 1;
-					case subscription.datalog.DockerRegistryType.DockerHub:
-						return host === "hub.docker.com" ? 0 : 1;
-					default:
-						return 1;
-				}
-			},
-		],
-		["asc"],
-	);
 	const newImageName = `gcr.io/atomist-container-skills/${namespace}-${name}:${version}.skill`;
-	return docker.doAuthed<string>(ctx, sortedRegistries, async () => {
+	return docker.doAuthed<string>(ctx, [registry], async () => {
 		log.info("Copying image");
 		const args = [
 			"copy",
@@ -353,11 +345,14 @@ async function copyImage(
 			)}`,
 		];
 
-		const result = await childProcess.spawnPromise("skopeo", args);
+		const result = await childProcess.spawnPromise("skopeo", args, {
+			logCommand: false,
+		});
 		if (result.status !== 0) {
 			log.error(result.stderr);
 			throw new Error("Failed to copy image");
 		}
+		log.info(`Successfully copied image to ${newImageName}`);
 		return newImageName;
 	});
 }
