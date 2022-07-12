@@ -253,7 +253,6 @@ async function downloadImage(
 				args,
 				{
 					env,
-					logCommand: false,
 				},
 			);
 			if (result.status !== 0) {
@@ -286,7 +285,7 @@ async function copyImage(
 			"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
 		serverUrl: "gcr.io",
 	} as any;
-	return docker.doAuthed<string>(ctx, [registry, gcrRegistry], async () => {
+	return docker.doAuthed<string>(ctx, [registry], async () => {
 		log.info("Copying image");
 		const args = [
 			"copy",
@@ -294,9 +293,7 @@ async function copyImage(
 			`docker://${newImageName}`,
 		];
 
-		const result = await childProcess.spawnPromise("skopeo", args, {
-			logCommand: false,
-		});
+		const result = await childProcess.spawnPromise("skopeo", args);
 		if (result.status !== 0) {
 			log.error(result.stderr);
 			throw new Error("Failed to copy image");
