@@ -29,6 +29,7 @@ import {
 	subscription,
 	tmpFs,
 } from "@atomist/skill";
+import { getGcrOAuthAccessToken } from "@atomist/skill/lib/docker/index";
 import * as fs from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
@@ -345,6 +346,11 @@ async function copyImage(
 			"copy",
 			`docker://${fullImageName(skill.image)}`,
 			`docker://${newImageName}`,
+			`--dest-creds`,
+			`oauth2accesstoken:${await getGcrOAuthAccessToken(
+				"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
+				ctx,
+			)}`,
 		];
 
 		const result = await childProcess.spawnPromise("skopeo", args);
