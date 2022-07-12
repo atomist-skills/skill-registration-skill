@@ -19,6 +19,7 @@ import {
 	docker,
 	EventContext,
 	github,
+	guid,
 	handle,
 	log,
 	MappingEventHandler,
@@ -29,7 +30,7 @@ import {
 	subscription,
 	tmpFs,
 } from "@atomist/skill";
-import { getGcrOAuthAccessToken } from "@atomist/skill/lib/docker/index";
+import { DockerRegistryType } from "@atomist/skill/lib/definition/subscription/common_types";
 import * as fs from "fs-extra";
 import * as _ from "lodash";
 import * as path from "path";
@@ -37,7 +38,7 @@ import * as path from "path";
 import { Configuration } from "../configuration";
 import { nextTag } from "../tags";
 import { transactStream } from "../transact_stream";
-import { ExtendedDockerRegistry, RegisterSkill } from "../types";
+import { RegisterSkill } from "../types";
 import {
 	AtomistYaml,
 	CreateRepositoryIdFromCommit,
@@ -49,7 +50,7 @@ export const handler: MappingEventHandler<
 	{
 		image: subscription.datalog.DockerImage;
 		commit: subscription.datalog.Commit;
-		registry: ExtendedDockerRegistry;
+		registry: docker.ExtendedDockerRegistry;
 	},
 	Configuration
 > = {
@@ -58,7 +59,7 @@ export const handler: MappingEventHandler<
 			handle.transformData<{
 				image: subscription.datalog.DockerImage;
 				commit: subscription.datalog.Commit;
-				registry: ExtendedDockerRegistry;
+				registry: docker.ExtendedDockerRegistry;
 			}>(e),
 		);
 		return {
@@ -267,7 +268,7 @@ async function defaults(
 async function downloadImage(
 	ctx: EventContext,
 	skill: RegisterSkill,
-): Promise<[string, ExtendedDockerRegistry]> {
+): Promise<[string, docker.ExtendedDockerRegistry]> {
 	const host = skill.image.repository.host;
 	const sortedRegistries = _.orderBy(
 		skill.registry,
@@ -289,7 +290,7 @@ async function downloadImage(
 		],
 		["asc"],
 	);
-	return docker.doAuthed<[string, ExtendedDockerRegistry]>(
+	return docker.doAuthed<[string, docker.ExtendedDockerRegistry]>(
 		ctx,
 		sortedRegistries,
 		async registry => {
@@ -329,20 +330,22 @@ async function copyImage(
 	namespace: string,
 	name: string,
 	version: string,
-	registry: ExtendedDockerRegistry,
+	registry: docker.ExtendedDockerRegistry,
 ): Promise<string> {
 	const newImageName = `gcr.io/atomist-container-skills/${namespace}-${name}:${version}.skill`;
-	return docker.doAuthed<string>(ctx, [registry], async () => {
+	const gcrRegistry: docker.ExtendedDockerRegistry = {
+		id: guid(),
+		type: DockerRegistryType.Gcr,
+		serviceAccount:
+			"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
+		serverUrl: "gcr.io",
+	} as any;
+	return docker.doAuthed<string>(ctx, [registry, gcrRegistry], async () => {
 		log.info("Copying image");
 		const args = [
 			"copy",
 			`docker://${fullImageName(skill.image)}`,
 			`docker://${newImageName}`,
-			`--dest-creds`,
-			`oauth2accesstoken:${await getGcrOAuthAccessToken(
-				"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
-				ctx,
-			)}`,
 		];
 
 		const result = await childProcess.spawnPromise("skopeo", args, {

@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-import { subscription } from "@atomist/skill";
-
-export type ExtendedDockerRegistry = subscription.datalog.DockerRegistry & {
-	serviceAccount: string;
-	arn: string;
-	externalId: string;
-	region: string;
-};
+import { docker, subscription } from "@atomist/skill";
 
 export interface RegisterSkill {
 	image: subscription.datalog.DockerImage;
 	commit: subscription.datalog.Commit;
-	registry: ExtendedDockerRegistry[];
+	registry: docker.ExtendedDockerRegistry[];
 }
