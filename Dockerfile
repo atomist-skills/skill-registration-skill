@@ -44,6 +44,7 @@ RUN apk add --no-cache \
  && npm cache clean --force \
  && apk del npm python3 make g++
 
+LABEL com.docker.skill.api.version="container/v2"
 COPY --from=build /skill/ .
 COPY --from=build /skill/.atomist/skill.yaml /
 
