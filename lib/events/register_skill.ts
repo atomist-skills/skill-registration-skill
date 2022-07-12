@@ -19,6 +19,7 @@ import {
 	docker,
 	EventContext,
 	github,
+	guid,
 	handle,
 	log,
 	MappingEventHandler,
@@ -29,6 +30,7 @@ import {
 	subscription,
 	tmpFs,
 } from "@atomist/skill";
+import { DockerRegistryType } from "@atomist/skill/lib/definition/subscription/common_types";
 import { AtomistSkillInput } from "@atomist/skill/lib/definition/subscription/typings/types";
 import * as fs from "fs-extra";
 import * as _ from "lodash";
@@ -276,14 +278,14 @@ async function copyImage(
 	registry: docker.ExtendedDockerRegistry,
 ): Promise<string> {
 	const newImageName = `gcr.io/atomist-container-skills/${skill.namespace}-${skill.name}:${skill.version}.skill`;
-	/* const gcrRegistry: docker.ExtendedDockerRegistry = {
+	const gcrRegistry: docker.ExtendedDockerRegistry = {
 		id: guid(),
 		type: DockerRegistryType.Gcr,
 		serviceAccount:
 			"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
 		serverUrl: "gcr.io",
-	} as any; */
-	return docker.doAuthed<string>(ctx, [registry], async () => {
+	} as any;
+	return docker.doAuthed<string>(ctx, [registry, gcrRegistry], async () => {
 		log.info("Copying image");
 		const args = [
 			"copy",
