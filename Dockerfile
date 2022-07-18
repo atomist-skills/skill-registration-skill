@@ -1,5 +1,5 @@
 # Set up runtime container with dependencies
-FROM atomist/skill:alpine_3.16-node_16@sha256:3c28a049c076aead769480ec214d6e2a46f0f8b7fd2f7f66da0e71e47cbaf5d2 as runtime
+FROM atomist/skill:alpine_3.16-node_16@sha256:db6b383da5bc60839a7635d0d7e09940ee9b5b77d061f53fa77b2ddca4d33fdd as runtime
 
 # skopeo
 RUN apk add --no-cache \
