@@ -109,6 +109,8 @@ export const handler: MappingEventHandler<
 			await inlineDatalogResources(p, skill);
 			await createArtifact(skill, ctx, registry);
 
+			log.info(`Registering skill: ${JSON.stringify(skill)}`);
+
 			// eslint-disable-next-line deprecation/deprecation
 			await ctx.graphql.mutate("registerSkill.graphql", {
 				skill,
@@ -267,7 +269,7 @@ async function downloadImage(
 					imageNameWithDigest.replace(/\//g, "").replace(/:/g, "_"),
 				),
 				registry,
-			];
+			] as any;
 		},
 	);
 }
@@ -285,7 +287,7 @@ async function copyImage(
 			"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
 		serverUrl: "gcr.io",
 	} as any;
-	return docker.doAuthed<string>(ctx, [registry, gcrRegistry], async () => {
+	return docker.doAuthed<string>(ctx, [[registry, gcrRegistry]], async () => {
 		log.info("Copying image");
 		const args = [
 			"copy",
