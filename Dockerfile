@@ -3,7 +3,7 @@ FROM atomist/skill:alpine_3.16-node_16@sha256:3c28a049c076aead769480ec214d6e2a46
 
 # skopeo
 RUN apk add --no-cache \
- skopeo=1.8.0-r1 \
+ skopeo=1.8.0-r2 \
  && skopeo --version
 
 # container-diff
