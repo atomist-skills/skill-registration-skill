@@ -198,8 +198,8 @@ async function defaults(
 			? "Atomist"
 			: commit.repo.org.name;
 	return {
-		namespace,
-		name: commit.repo.name,
+		namespace: namespace.toLowerCase(),
+		name: commit.repo.name.toLowerCase(),
 		version: undefined,
 		displayName: commit.repo.name,
 		author: namespace,
