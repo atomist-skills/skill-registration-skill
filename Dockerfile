@@ -3,7 +3,7 @@ FROM atomist/skill:alpine_3.16-node_16@sha256:db6b383da5bc60839a7635d0d7e09940ee
 
 # skopeo
 RUN apk add --no-cache \
- skopeo=1.8.0-r2 \
+ skopeo=1.8.0-r4 \
  && skopeo --version
 
 # container-diff
@@ -21,7 +21,7 @@ COPY . ./
 
 RUN apk add --no-cache \
  npm=8.10.0-r0 \
- python3=3.10.4-r0 \
+ python3=3.10.5-r0 \
  make=4.3-r0 \
  g++=11.2.1_git20220219-r2 \
  && NODE_ENV=development npm ci --no-optional \
@@ -33,20 +33,21 @@ RUN apk add --no-cache \
 # Set up final runtime
 FROM runtime
 
+LABEL com.docker.skill.api.version="container/v2"
+COPY --from=build /skill/ .
+COPY --from=build /skill/.atomist/skill.yaml /
+
 COPY package.json package-lock.json ./
 
 RUN apk add --no-cache \
  npm=8.10.0-r0 \
- python3=3.10.4-r0 \
+ python3=3.10.5-r0 \
  make=4.3-r0 \
  g++=11.2.1_git20220219-r2 \
  && npm ci --no-optional \
  && npm cache clean --force \
  && apk del npm python3 make g++
 
-LABEL com.docker.skill.api.version="container/v2"
-COPY --from=build /skill/ .
-COPY --from=build /skill/.atomist/skill.yaml /
 
 ENTRYPOINT ["node", "--no-deprecation", "--no-warnings", "--expose_gc", "--optimize_for_size", "--max-old-space-size=4096", "--always_compact", "/skill/node_modules/.bin/atm-skill"]
 CMD ["run"]
