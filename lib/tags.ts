@@ -36,13 +36,8 @@ export async function nextTag(
 		.sort((t1, t2) => {
 			return semver.compare(t2, t1);
 		});
-	const latestTag = sortedTags[0] || "0.1.0-0";
-	let nextTag;
-	if (semver.prerelease(latestTag)) {
-		nextTag = semver.inc(latestTag, "prerelease");
-	} else {
-		nextTag = `${semver.inc(latestTag, "patch")}-1`;
-	}
+	const latestTag = sortedTags[0] || "0.1.0";
+	const nextTag = semver.inc(latestTag, "patch");
 	log.debug(
 		`Calculated next tag '${nextTag}' from current tag '${latestTag}'`,
 	);
