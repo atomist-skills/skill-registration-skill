@@ -106,6 +106,7 @@ export const handler: MappingEventHandler<
 			skill = _.merge(skill, skillYaml, {});
 
 			skill.version = await version(ctx, skill);
+			skill.apiVersion = apiVersion(ctx);
 			await inlineDatalogResources(p, skill);
 			await createArtifact(skill, ctx, registry);
 
@@ -136,6 +137,13 @@ export const handler: MappingEventHandler<
 		},
 	}),
 };
+
+function apiVersion(ctx: EventContext<RegisterSkill, Configuration>): string {
+	const versionLabel = ctx.data.image.labels?.find(
+		l => l.name === "com.docker.skill.api.version",
+	)?.value;
+	return versionLabel.split("/")[1];
+}
 
 async function version(
 	ctx: EventContext<RegisterSkill, Configuration>,
