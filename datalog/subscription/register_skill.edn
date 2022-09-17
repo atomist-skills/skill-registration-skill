@@ -44,7 +44,8 @@
  [?label :docker.image.label/name "com.docker.skill.api.version"]
  (or-join [?label]
     [?label :docker.image.label/value "container/v1"]
-    [?label :docker.image.label/value "container/v2"])
+    [?label :docker.image.label/value "container/v2"]
+    [?label :docker.image.label/value "extension/v2"])
 
  ;; only commits on the repo default branch get registered
  [?ref :git.ref/commit ?commit]

@@ -108,7 +108,11 @@ export const handler: MappingEventHandler<
 			skill.version = await version(ctx, skill);
 			skill.apiVersion = apiVersion(ctx);
 			await inlineDatalogResources(p, skill);
-			await createArtifact(skill, ctx, registry);
+			if (isContainer(ctx)) {
+				await createArtifact(skill, ctx, registry);
+			} else {
+				skill.artifacts = {};
+			}
 
 			log.info(`Registering skill: ${JSON.stringify(skill)}`);
 
@@ -138,14 +142,25 @@ export const handler: MappingEventHandler<
 	}),
 };
 
-function apiVersion(ctx: EventContext<RegisterSkill, Configuration>): string {
+export function apiVersion(
+	ctx: EventContext<RegisterSkill, Configuration>,
+): string {
 	const versionLabel = ctx.data.image.labels?.find(
 		l => l.name === "com.docker.skill.api.version",
 	)?.value;
 	return versionLabel.split("/")[1];
 }
 
-async function version(
+export function isContainer(
+	ctx: EventContext<RegisterSkill, Configuration>,
+): boolean {
+	const versionLabel = ctx.data.image.labels?.find(
+		l => l.name === "com.docker.skill.api.version",
+	)?.value;
+	return versionLabel.split("/")[0] === "container";
+}
+
+export async function version(
 	ctx: EventContext<RegisterSkill, Configuration>,
 	skill: AtomistSkillInput,
 ): Promise<string> {
@@ -187,7 +202,7 @@ async function version(
 	return version;
 }
 
-async function defaults(
+export async function defaults(
 	cwd: string,
 	commit: subscription.datalog.Commit,
 ): Promise<AtomistSkillInput> {
@@ -333,7 +348,7 @@ export function fullImageName(
 	}${image.digest ? `@${image.digest}` : ""}`;
 }
 
-async function inlineDatalogResources(
+export async function inlineDatalogResources(
 	p: project.Project,
 	skill: AtomistSkillInput,
 ): Promise<void> {
