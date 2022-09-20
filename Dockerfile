@@ -33,7 +33,7 @@ RUN apk add --no-cache \
 # Set up final runtime
 FROM runtime
 
-LABEL com.docker.skill.api.version="container/v2"
+LABEL com.docker.skill.api.version="container/v1"
 COPY --from=build /skill/ .
 COPY --from=build /skill/.atomist/skill.yaml /
 
