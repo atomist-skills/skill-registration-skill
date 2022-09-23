@@ -114,6 +114,7 @@ export const handler: MappingEventHandler<
 				skill.artifacts = {};
 			}
 
+			delete skill.parameterValues;
 			log.info(`Registering skill: ${JSON.stringify(skill)}`);
 
 			// eslint-disable-next-line deprecation/deprecation
