@@ -31,20 +31,14 @@ export const AtomistYamlFileName = "skill.package.yaml";
 export async function getYamlFile<D = any>(
 	project: Project,
 	name: string = AtomistYamlFileName,
-	options: { parse: boolean } = {
-		parse: true,
-	},
-): Promise<{ name: string; content: string; doc?: D } | undefined> {
+): Promise<Array<D>> {
+	const docs = [];
 	if (await fs.pathExists(project.path(name))) {
 		const content = (await fs.readFile(project.path(name))).toString();
-		const doc: any = options.parse ? yaml.safeLoad(content) : undefined;
-		return {
-			name,
-			content,
-			doc,
-		};
+		const yamlDocs: any = yaml.safeLoadAll(content);
+		docs.push(...yamlDocs);
 	}
-	return undefined;
+	return docs;
 }
 
 export const CreateRepositoryIdFromCommit: handle.CreateRepositoryId<

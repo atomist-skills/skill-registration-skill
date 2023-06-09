@@ -47,6 +47,8 @@ import {
 } from "../util";
 import semver = require("semver/preload");
 
+const ArtifactCache: Record<string, any> = {};
+
 export const handler: MappingEventHandler<
 	RegisterSkill,
 	{
@@ -101,43 +103,47 @@ export const handler: MappingEventHandler<
 			}
 
 			// load skill.yaml from project (at this point it can be the container filesystem or repo contents)
-			const skillYaml = (await getYamlFile<AtomistYaml>(p, "skill.yaml"))
-				.doc.skill;
-			skill = _.merge(skill, skillYaml, {});
+			const skillYamls = await getYamlFile<AtomistYaml>(p, "skill.yaml");
+			const skillNames = [];
+			for (const skillYaml of skillYamls) {
+				skill = _.merge(skill, skillYaml, {});
 
-			skill.version = await version(ctx, skill);
-			skill.apiVersion = apiVersion(ctx);
-			await inlineDatalogResources(p, skill);
-			if (isContainer(ctx)) {
-				await createArtifact(skill, ctx, registry);
-			} else {
-				skill.artifacts = {};
+				skill.version = await version(ctx, skill);
+				skill.apiVersion = apiVersion(ctx);
+				await inlineDatalogResources(p, skill);
+				if (isContainer(ctx)) {
+					await createArtifact(skill, ctx, registry);
+				} else {
+					skill.artifacts = {};
+				}
+
+				delete skill.parameterValues;
+				log.info(`Registering skill: ${JSON.stringify(skill)}`);
+
+				// eslint-disable-next-line deprecation/deprecation
+				await ctx.graphql.mutate("registerSkill.graphql", {
+					skill,
+				});
+
+				await createTag(skill.version, commit.sha, p);
+
+				await transactStream(
+					ctx,
+					ctx.data,
+					"unstable",
+					skill.namespace,
+					skill.name,
+				);
+				skillNames.push(
+					`${skill.namespace}/${skill.name}@${skill.version}`,
+				);
 			}
-
-			delete skill.parameterValues;
-			log.info(`Registering skill: ${JSON.stringify(skill)}`);
-
-			// eslint-disable-next-line deprecation/deprecation
-			await ctx.graphql.mutate("registerSkill.graphql", {
-				skill,
-			});
-
-			await createTag(skill.version, commit.sha, p);
-
-			await transactStream(
-				ctx,
-				ctx.data,
-				"unstable",
-				skill.namespace,
-				skill.name,
-			);
-
 			return {
 				status: status.success(
-					`Successfully registered ${skill.namespace}/${skill.name}@${skill.version}`,
+					`Successfully registered ${skillNames.join(", ")}`,
 				),
 				conclusion: policy.Conclusion.Success,
-				body: `Successfully registered \`${skill.namespace}/${skill.name}@${skill.version}\``,
+				body: `Successfully registered \`${skillNames.join(", ")}\``,
 			};
 		},
 	}),
@@ -311,6 +317,11 @@ async function copyImage(
 			"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
 		serverUrl: "gcr.io",
 	} as any;
+
+	if (ArtifactCache[newImageName]) {
+		return newImageName;
+	}
+
 	return docker.doAuthed<string>(ctx, [[registry, gcrRegistry]], async () => {
 		log.info("Copying image");
 		const args = [
@@ -325,6 +336,7 @@ async function copyImage(
 			throw new Error("Failed to copy image");
 		}
 		log.info(`Successfully copied image to ${newImageName}`);
+		ArtifactCache[newImageName] = true;
 		return newImageName;
 	});
 }

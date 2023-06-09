@@ -3,7 +3,7 @@ FROM atomist/skill:alpine_3.16-node_16@sha256:db6b383da5bc60839a7635d0d7e09940ee
 
 # skopeo
 RUN apk add --no-cache \
- skopeo=1.8.0-r4 \
+ skopeo \
  && skopeo --version
 
 # container-diff
@@ -20,10 +20,10 @@ FROM runtime AS build
 COPY . ./
 
 RUN apk add --no-cache \
- npm=8.10.0-r0 \
- python3=3.10.5-r0 \
- make=4.3-r0 \
- g++=11.2.1_git20220219-r2 \
+ npm \
+ python3 \
+ make \
+ g++ \
  && NODE_ENV=development npm ci --no-optional \
  && npm run skill \
  && npm cache clean --force \
@@ -40,10 +40,10 @@ COPY --from=build /skill/.atomist/skill.yaml /
 COPY package.json package-lock.json ./
 
 RUN apk add --no-cache \
- npm=8.10.0-r0 \
- python3=3.10.5-r0 \
- make=4.3-r0 \
- g++=11.2.1_git20220219-r2 \
+ npm \
+ python3 \
+ make \
+ g++ \
  && npm ci --no-optional \
  && npm cache clean --force \
  && apk del npm python3 make g++
