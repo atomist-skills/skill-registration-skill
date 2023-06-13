@@ -106,7 +106,7 @@ export const handler: MappingEventHandler<
 			const skillYamls = await getYamlFile<AtomistYaml>(p, "skill.yaml");
 			const skillNames = [];
 			for (const skillYaml of skillYamls) {
-				skill = _.merge(skill, skillYaml, {});
+				skill = _.merge(skill, skillYaml.skill, {});
 
 				skill.version = await version(ctx, skill);
 				skill.apiVersion = apiVersion(ctx);
