@@ -21,6 +21,7 @@ import {
 	github,
 	guid,
 	handle,
+	handleError,
 	log,
 	MappingEventHandler,
 	policy,
@@ -427,24 +428,26 @@ async function createTag(
 		});
 	} catch (e) {
 		// tag doesn't exist yet; let's create it
-		await api.git.createTag({
-			owner: p.id.owner,
-			repo: p.id.repo,
-			tag: version,
-			object: sha,
-			type: "commit",
-			message: `v${version}`,
-			tagger: {
-				name: "Atomist Bot",
-				email: "bot@atomist.com",
-				date: new Date().toISOString(),
-			},
-		});
-		await api.git.createRef({
-			owner: p.id.owner,
-			repo: p.id.repo,
-			sha,
-			ref: `refs/tags/${version}`,
+		await handleError(async () => {
+			await api.git.createTag({
+				owner: p.id.owner,
+				repo: p.id.repo,
+				tag: version,
+				object: sha,
+				type: "commit",
+				message: `v${version}`,
+				tagger: {
+					name: "Atomist Bot",
+					email: "bot@atomist.com",
+					date: new Date().toISOString(),
+				},
+			});
+			await api.git.createRef({
+				owner: p.id.owner,
+				repo: p.id.repo,
+				sha,
+				ref: `refs/tags/${version}`,
+			});
 		});
 	}
 }
