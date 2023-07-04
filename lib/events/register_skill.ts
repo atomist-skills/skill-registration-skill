@@ -95,7 +95,7 @@ export const handler: MappingEventHandler<
 			const [dir, registry] = await downloadImage(ctx);
 
 			// default some skill data
-			let skill: any = await defaults(dir, commit);
+			const defaultSkill: any = await defaults(dir, commit);
 
 			let p = await ctx.project.load(repository.fromCommit(commit), dir);
 			// if container doesn't have a skill.yaml in the root; clone repo and use that
@@ -107,7 +107,7 @@ export const handler: MappingEventHandler<
 			const skillYamls = await getYamlFile<AtomistYaml>(p, "skill.yaml");
 			const skillNames = [];
 			for (const skillYaml of skillYamls) {
-				skill = _.merge(skill, skillYaml.skill, {});
+				const skill = _.merge({}, defaultSkill, skillYaml.skill);
 
 				skill.version = await version(ctx, skill);
 				skill.apiVersion = apiVersion(ctx);
