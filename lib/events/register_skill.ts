@@ -205,9 +205,16 @@ export async function version(
 		);
 		return skill.version;
 	}
-	const version = await nextTag(repository.fromCommit(ctx.data.commit));
-	log.info(`Skill version set to '${version}' because of latest git tag`);
-	return version;
+	if (!ctx.data["_version"]) {
+		const version = await nextTag(repository.fromCommit(ctx.data.commit));
+		log.info(`Skill version set to '${version}' because of latest git tag`);
+		ctx.data["_version"] = version;
+		return version;
+	} else {
+		const version = ctx.data["_version"];
+		log.info(`Skill version set to '${version}' because of latest git tag`);
+		return version;
+	}
 }
 
 export async function defaults(
