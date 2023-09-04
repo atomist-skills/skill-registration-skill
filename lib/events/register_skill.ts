@@ -467,16 +467,16 @@ async function createArtifact(
 	const artifact = skill.artifacts?.docker?.[0] || ({} as any);
 	artifact.name = artifact.name || "skill";
 	if (
-		!(
-			ctx.data.image.repository.host === "gcr.io" &&
+		(ctx.data.image.repository.host === "gcr.io" &&
 			ctx.data.image.repository.name.startsWith(
 				"atomist-container-skills/",
-			)
-		)
+			)) ||
+		(ctx.data.image.repository.host === "hub.docker.com" &&
+			ctx.data.image.repository.name.startsWith("atomist/"))
 	) {
-		artifact.image = await copyImage(ctx, skill, registry);
-	} else {
 		artifact.image = fullImageName(ctx.data.image);
+	} else {
+		artifact.image = await copyImage(ctx, skill, registry);
 	}
 
 	if (!(skill.artifacts?.docker?.length > 0)) {
