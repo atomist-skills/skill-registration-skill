@@ -35,6 +35,10 @@
  :where
  (attributes-tx ?ctx ?image :docker.image/commit ?commit)
 
+ [?platform :docker.platform/image ?image]
+ [?platform :docker.platform/os "linux"]
+ [?platform :docker.platform/architecture "amd64"]
+
  ;; prevent endless self-registration
  [?image :docker.image/tags ?tag]
  (not (string-match ?tag "^.*\\.skill$" _))
