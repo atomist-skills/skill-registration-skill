@@ -17,7 +17,9 @@
 import { docker, subscription } from "@atomist/skill";
 
 export interface RegisterSkill {
-	image: subscription.datalog.DockerImage;
+	image: subscription.datalog.DockerImage & {
+		manifestList: Array<{ digest: string }>;
+	};
 	commit: subscription.datalog.Commit;
 	registry: docker.ExtendedDockerRegistry[];
 }

@@ -62,7 +62,9 @@ export const handler: MappingEventHandler<
 	map: event => {
 		const data = event.map(e =>
 			handle.transformData<{
-				image: subscription.datalog.DockerImage;
+				image: subscription.datalog.DockerImage & {
+					manifestList: Array<{ digest: string }>;
+				};
 				commit: subscription.datalog.Commit;
 				registry: docker.ExtendedDockerRegistry;
 			}>(e),
@@ -360,13 +362,19 @@ export function imageName(
 
 export function fullImageName(
 	image: Pick<
-		subscription.datalog.DockerImage,
-		"digest" | "tags" | "repository"
+		subscription.datalog.DockerImage & {
+			manifestList: Array<{ digest: string }>;
+		},
+		"digest" | "tags" | "repository" | "manifestList"
 	>,
 ): string {
+	let digest = image.digest;
+	if (image.manifestList?.length > 0) {
+		digest = image.manifestList[0].digest;
+	}
 	return `${imageName(image)}${
-		!image.digest && image.tags?.length > 0 ? `:${image.tags[0]}` : ""
-	}${image.digest ? `@${image.digest}` : ""}`;
+		!digest && image.tags?.length > 0 ? `:${image.tags[0]}` : ""
+	}${digest ? `@${digest}` : ""}`;
 }
 
 export async function inlineDatalogResources(

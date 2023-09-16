@@ -3,6 +3,7 @@
    ?image
    [:schema/entity-type
     :docker.image/digest
+    {(:docker.manifest-list/_images :as :manifest-list) [:docker.manifest-list/digest]}
     {:docker.image/labels [:docker.image.label/name :docker.image.label/value]}
     {:docker.image/repository [:docker.repository/host
                                (:docker.repository/repository :as :name)]}])
