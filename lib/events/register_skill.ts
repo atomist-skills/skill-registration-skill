@@ -113,7 +113,7 @@ export const handler: MappingEventHandler<
 
 				skill.version = await version(ctx, skill);
 				skill.apiVersion = apiVersion(ctx);
-				await inlineDatalogResources(p, skill);
+				await inlineDatalogResources(p, skill, skillYaml.skill);
 				if (isContainer(ctx)) {
 					await createArtifact(skill, ctx, registry);
 				} else {
@@ -377,27 +377,36 @@ export function fullImageName(
 	}${digest ? `@${digest}` : ""}`;
 }
 
-export async function inlineDatalogResources(
+type DatalogSubscription = {
+	name: string;
+	query: string;
+	limit?: number;
+}
+
+async function getDatalogSubscriptionFileMatches(
 	p: project.Project,
-	skill: AtomistSkillInput,
-): Promise<void> {
-	const datalogSubscriptions = [];
-	datalogSubscriptions.push(
-		...(await project.withGlobMatches<{
-			name: string;
-			query: string;
-			limit?: number;
-		}>(p, "datalog/subscription/*.edn", async file => {
-			const filePath = p.path(file);
-			const fileName = path.basename(filePath);
-			const extName = path.extname(fileName);
-			return {
-				query: (await fs.readFile(filePath)).toString(),
-				name: fileName.replace(extName, ""),
-			};
-		})),
-	);
-	(skill.datalogSubscriptions || []).forEach(d => {
+	matchPath: string
+): Promise<Array<DatalogSubscription>> {
+	return (await project.withGlobMatches<{
+		name: string;
+		query: string;
+		limit?: number;
+	}>(p, matchPath, async file => {
+		const filePath = p.path(file);
+		const fileName = path.basename(filePath);
+		const extName = path.extname(fileName);
+		return {
+			query: (await fs.readFile(filePath)).toString(),
+			name: fileName.replace(extName, ""),
+		};
+	}))
+}
+
+function updateSubscriptions(
+	datalogSubscriptions: Array<DatalogSubscription>,
+	updates: Array<DatalogSubscription>
+): void {
+	updates.forEach(d => {
 		const eds = datalogSubscriptions.find(ds => d.name === ds.name);
 		if (eds) {
 			eds.query = d.query;
@@ -406,6 +415,28 @@ export async function inlineDatalogResources(
 			datalogSubscriptions.push(d);
 		}
 	});
+}
+
+export async function inlineDatalogResources(
+	p: project.Project,
+	skill: AtomistSkillInput,
+	skillYaml: any,
+): Promise<void> {
+	const datalogSubscriptions = new Array<DatalogSubscription>();
+
+	// common subscriptions
+	datalogSubscriptions.push(
+		...(await getDatalogSubscriptionFileMatches(p, "datalog/subscription/*.edn")),
+	);
+
+	// subscription paths defined in yaml
+	for (const subscriptionPath of (skillYaml.datalogSubscriptionPaths || [])) {
+		const groupMatches = await getDatalogSubscriptionFileMatches(p, `datalog/subscription/${subscriptionPath}`)
+		updateSubscriptions(datalogSubscriptions, groupMatches)
+	}
+
+	// subscriptions defined in yaml
+	updateSubscriptions(datalogSubscriptions, skill.datalogSubscriptions || [])
 	skill.datalogSubscriptions = datalogSubscriptions;
 
 	const schemata = [...(skill.schemata || [])];
