@@ -113,7 +113,7 @@ export const handler: MappingEventHandler<
 
 				skill.version = await version(ctx, skill);
 				skill.apiVersion = apiVersion(ctx);
-				await inlineDatalogResources(p, skill, skillYaml.skill);
+				await inlineDatalogResources(p, skill);
 				if (isContainer(ctx)) {
 					await createArtifact(skill, ctx, registry);
 				} else {
@@ -381,13 +381,13 @@ type DatalogSubscription = {
 	name: string;
 	query: string;
 	limit?: number;
-}
+};
 
 async function getDatalogSubscriptionFileMatches(
 	p: project.Project,
-	matchPath: string
+	matchPath: string,
 ): Promise<Array<DatalogSubscription>> {
-	return (await project.withGlobMatches<{
+	return await project.withGlobMatches<{
 		name: string;
 		query: string;
 		limit?: number;
@@ -399,12 +399,12 @@ async function getDatalogSubscriptionFileMatches(
 			query: (await fs.readFile(filePath)).toString(),
 			name: fileName.replace(extName, ""),
 		};
-	}))
+	});
 }
 
 function updateSubscriptions(
 	datalogSubscriptions: Array<DatalogSubscription>,
-	updates: Array<DatalogSubscription>
+	updates: Array<DatalogSubscription>,
 ): void {
 	updates.forEach(d => {
 		const eds = datalogSubscriptions.find(ds => d.name === ds.name);
@@ -419,24 +419,30 @@ function updateSubscriptions(
 
 export async function inlineDatalogResources(
 	p: project.Project,
-	skill: AtomistSkillInput,
-	skillYaml: any,
+	skill: AtomistYaml["skill"],
 ): Promise<void> {
-	const datalogSubscriptions = new Array<DatalogSubscription>();
+	const datalogSubscriptions: Array<DatalogSubscription> = [];
 
 	// common subscriptions
 	datalogSubscriptions.push(
-		...(await getDatalogSubscriptionFileMatches(p, "datalog/subscription/*.edn")),
+		...(await getDatalogSubscriptionFileMatches(
+			p,
+			"datalog/subscription/*.edn",
+		)),
 	);
 
 	// subscription paths defined in yaml
-	for (const subscriptionPath of (skillYaml.datalogSubscriptionPaths || [])) {
-		const groupMatches = await getDatalogSubscriptionFileMatches(p, `datalog/subscription/${subscriptionPath}`)
-		updateSubscriptions(datalogSubscriptions, groupMatches)
+	for (const subscriptionPath of skill.datalogSubscriptionPaths || []) {
+		const groupMatches = await getDatalogSubscriptionFileMatches(
+			p,
+			`datalog/subscription/${subscriptionPath}`,
+		);
+		updateSubscriptions(datalogSubscriptions, groupMatches);
 	}
+	delete skill.datalogSubscriptionPaths;
 
 	// subscriptions defined in yaml
-	updateSubscriptions(datalogSubscriptions, skill.datalogSubscriptions || [])
+	updateSubscriptions(datalogSubscriptions, skill.datalogSubscriptions || []);
 	skill.datalogSubscriptions = datalogSubscriptions;
 
 	const schemata = [...(skill.schemata || [])];
