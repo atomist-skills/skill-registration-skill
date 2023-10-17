@@ -433,11 +433,11 @@ export async function inlineDatalogResources(
 
 	// subscription paths defined in yaml
 	for (const subscriptionPath of skill.datalogSubscriptionPaths || []) {
-		const groupMatches = await getDatalogSubscriptionFileMatches(
+		const subscriptionPathMatches = await getDatalogSubscriptionFileMatches(
 			p,
 			`datalog/subscription/${subscriptionPath}`,
 		);
-		updateSubscriptions(datalogSubscriptions, groupMatches);
+		updateSubscriptions(datalogSubscriptions, subscriptionPathMatches);
 	}
 	delete skill.datalogSubscriptionPaths;
 
