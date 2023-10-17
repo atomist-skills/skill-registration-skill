@@ -15,6 +15,7 @@
  */
 
 import { handle } from "@atomist/skill";
+import { AtomistSkillInput } from "@atomist/skill/lib/definition/subscription/typings/types";
 import { Project } from "@atomist/skill/lib/project/project";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -23,7 +24,7 @@ import { Configuration } from "./configuration";
 import { RegisterSkill } from "./types";
 
 export interface AtomistYaml {
-	skill: any;
+	skill: AtomistSkillInput & { datalogSubscriptionPaths?: string[] };
 }
 
 export const AtomistYamlFileName = "skill.package.yaml";
