@@ -111,6 +111,10 @@ export const handler: MappingEventHandler<
 			for (const skillYaml of skillYamls) {
 				const skill = _.merge({}, defaultSkill, skillYaml.skill);
 
+				if (!imageMatchesArtifact(skill, ctx)) {
+					continue;
+				}
+
 				skill.version = await version(ctx, skill);
 				skill.apiVersion = apiVersion(ctx);
 				await inlineDatalogResources(p, skill);
@@ -502,6 +506,14 @@ async function createTag(
 			});
 		});
 	}
+}
+
+function imageMatchesArtifact(
+	skill: AtomistSkillInput,
+	ctx: EventContext<RegisterSkill, Configuration>,
+): boolean {
+	const artifact = skill.artifacts?.docker?.[0]
+	return !artifact || artifact.image === fullImageName(ctx.data.image)
 }
 
 async function createArtifact(
