@@ -288,28 +288,18 @@ async function downloadImage(
 			log.info("Downloading image");
 			const tmpDir = await tmpFs.createDir(ctx);
 			const imageNameWithDigest = fullImageName(ctx.data.image);
-			const args = ["analyze", "--type=file", imageNameWithDigest];
-			const env = { ...process.env, CONTAINER_DIFF_CACHEDIR: tmpDir };
-			const result = await childProcess.spawnPromise(
-				"container-diff",
-				args,
-				{
-					env,
-				},
-			);
+			const args = [
+				imageNameWithDigest,
+				tmpDir,
+				"--include=skill.yaml",
+				"--include=datalog",
+			];
+			const result = await childProcess.spawnPromise("undock", args);
 			if (result.status !== 0) {
 				throw new Error("Failed to download layers");
 			}
 			log.info(`Successfully downloaded image`);
-			return [
-				path.join(
-					tmpDir,
-					".container-diff",
-					"cache",
-					imageNameWithDigest.replace(/\//g, "").replace(/:/g, "_"),
-				),
-				registry,
-			] as any;
+			return [tmpDir, registry] as any;
 		},
 	);
 }

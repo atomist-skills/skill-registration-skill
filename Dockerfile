@@ -6,11 +6,8 @@ RUN apk add --no-cache \
  skopeo \
  && skopeo --version
 
-# container-diff
-RUN curl -sLO https://storage.googleapis.com/container-diff/latest/container-diff-linux-amd64 \
- && chmod +x container-diff-linux-amd64 \
- && mv container-diff-linux-amd64 /usr/bin/container-diff \
- && container-diff version
+# undock
+COPY --from=crazymax/undock:0.7.0-rc.1 /usr/local/bin/undock /usr/local/bin/undock
 
 WORKDIR "/skill"
 

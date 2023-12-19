@@ -22,3 +22,4 @@ CO*.md
 build/test/
 build/typedoc/
           
+test/event.*
