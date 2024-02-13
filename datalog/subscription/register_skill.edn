@@ -62,7 +62,7 @@
  [?ref :git.ref/name ?default-branch]
 
  ;; check repo filter
- (skill-repo-selected? ?ctx ?repo)
+ (repo-selected-by-any-filter? ?ctx ?repo)
 
  ;; retrieve all transacted docker registry capabilities
  (or-join [?docker-registry]
