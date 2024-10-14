@@ -270,6 +270,8 @@ async function downloadImage(
 						return host.includes(".ecr.") ? 0 : 1;
 					case subscription.datalog.DockerRegistryType.Gcr:
 						return host.includes("gcr.io") ? 0 : 1;
+					case subscription.datalog.DockerRegistryType.Gar:
+						return host.includes("pkg.dev") ? 0 : 1;
 					case subscription.datalog.DockerRegistryType.Ghcr:
 						return host.includes("ghcr.io") ? 0 : 1;
 					case subscription.datalog.DockerRegistryType.DockerHub:
@@ -309,13 +311,13 @@ async function copyImage(
 	skill: AtomistSkillInput,
 	registry: docker.ExtendedDockerRegistry,
 ): Promise<string> {
-	const newImageName = `gcr.io/atomist-container-skills/${skill.namespace}-${skill.name}:${skill.version}.skill`;
+	const newImageName = `us-east1-docker.pkg.dev/scout-artifact-registry/skills/${skill.namespace}-${skill.name}:${skill.version}.skill`;
 	const gcrRegistry: docker.ExtendedDockerRegistry = {
 		id: guid(),
-		type: DockerRegistryType.Gcr,
+		type: DockerRegistryType.Gar,
 		serviceAccount:
-			"atomist-gcr-analysis@atomist-container-skills.iam.gserviceaccount.com",
-		serverUrl: "gcr.io",
+			"skill-registration-skill@scout-artifact-registry.iam.gserviceaccount.com",
+		serverUrl: "us-east1-docker.pkg.dev",
 	} as any;
 
 	if (ArtifactCache[newImageName]) {
