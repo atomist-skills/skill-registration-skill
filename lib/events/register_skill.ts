@@ -508,6 +508,10 @@ async function createArtifact(
 			ctx.data.image.repository.name.startsWith(
 				"atomist-container-skills/",
 			)) ||
+		(ctx.data.image.repository.host === "us-east1-docker.pkg.dev" &&
+			ctx.data.image.repository.name.startsWith(
+				"scout-artifact-registry/",
+			)) ||
 		(ctx.data.image.repository.host === "hub.docker.com" &&
 			ctx.data.image.repository.name.startsWith("atomist/"))
 	) {
