@@ -56,7 +56,7 @@
     "@atomist/skill": "0.12.0-main.58",
     "fs-extra": "9.1.0",
     "js-yaml": "3.14.1",
-    "lodash": "4.17.21",
+    "lodash": "4.18.1",
     "p-retry": "4.6.2",
     "semver": "7.3.7"
   },
